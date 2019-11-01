@@ -5,13 +5,24 @@ connection.onopen=()=>{
     connection.send('somethin sent')
 }
 */
+var colorList=[]
+function getColor(name){
+    function randomColor(){
+        return '#'+(0x1000000+(Math.random())*0xffffff).toString(16).substr(1,6)
+    }
+    if(colorList[name]==undefined){
+        let clr=randomColor()  //Рандомный цвет генерю
+        colorList[name]=clr        
+    }
+    return colorList[name]
+}
 function addMessage(message,pos)
 {
     var chat=document.getElementById('chat')
     var newMsg=''
     if(pos=='leftpos'){
         var lmsg=JSON.parse(message)    
-        newMsg='<div class="'+pos+'" title="От: '+lmsg.fio+'"><span>'+lmsg.text+'</span></div>'
+        newMsg='<div class="'+pos+'" title="От: '+lmsg.fio+'"><span style="color:'+getColor(lmsg.fio)+';">'+lmsg.text+'</span></div>'
     }else{
         var lmsg=message
         newMsg='<div class="'+pos+'"><span>'+message+'</span></div>'

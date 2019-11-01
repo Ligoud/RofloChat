@@ -5,7 +5,8 @@
 }
 #chatHolder{
     position: absolute;
-    transform: translate(150px,50px);
+    top: 50px;
+    left: 150px;    
 }
 nav{
     position: relative;
