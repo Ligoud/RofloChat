@@ -13,8 +13,8 @@ header.onmousedown=function (event){
         startPos.y=event.pageY
     }
     function changePos(x,y){
-        el.style.top=(el.getBoundingClientRect().top+y)+'px'
-        el.style.left=(el.getBoundingClientRect().left+x)+'px'
+        el.style.top=((el.getBoundingClientRect().top+y)<0?'0':(el.getBoundingClientRect().top+y))+'px'
+        el.style.left=((el.getBoundingClientRect().left+x)<100?'100':((el.getBoundingClientRect().left+x)))+'px'
     }
 
     document.addEventListener('mousemove',onMouseMove)

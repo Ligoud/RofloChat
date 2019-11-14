@@ -61,3 +61,31 @@ input{
     padding-right: 10px;
     overflow-x: hidden;
 }
+#map{
+    min-width: 100px;
+    max-width: 100px;
+    min-height: 600px;
+    max-height: 600px;
+    border: 1px solid black;
+    transform: translate(-100px,-630px);
+    border-radius: 10px 0 0 10px;
+    background: #ced6e0;
+    text-align: center;
+    padding-top: 5px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+#map::-webkit-scrollbar{
+    width: 0px;
+}
+.wodec, .wodec:link{
+    font-family: 'Pacifico', cursive;
+    color: black;
+    text-decoration: none;
+    transition: .2s;
+    border-bottom: 1px solid black;
+}
+.wodec:hover{
+    color: blueviolet;
+    font-size: 18px;
+}
