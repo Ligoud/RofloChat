@@ -5,6 +5,13 @@ connection.onopen=()=>{
     connection.send('somethin sent')
 }
 */
+var currentConversation={
+    type:'',
+    from:'',
+    to:'',
+    text:'',
+    fio:''
+}
 var colorList=[]
 function getColor(name){    //Цвет для чата генерит
     function randomColor(){
@@ -16,13 +23,61 @@ function getColor(name){    //Цвет для чата генерит
     }
     return colorList[name]
 }
+function toMain(){
+    document.getElementById('chat').innerHTML=''
+    var obj={
+        type:'getConv',
+        from: '',
+        to:''    ,
+        extra:'public'    
+    }
+    connection.send(JSON.stringify(obj)) 
+}
+function pm(spanEl){    
+    var chat=document.getElementById('chat')
+    var msgDiv=spanEl.parentElement
+    //Тут можно проверку сделать, чтобы не постоянно обновлять
+    chat.innerHTML=''
+    var obj={
+        type:'getConv',
+        from: document.getElementById('namePlace').value,
+        to:msgDiv.getAttribute('data-fio')        
+    }
+    connection.send(JSON.stringify(obj))    //Запрашиваю текст с сервера
+    //
+    /*
+    connection.send(JSON.stringify(obj))*/
+    var asds=document.querySelectorAll('a[data-convWIth]')
+    var check=false
+    if(asds.length>0){
+        asds.forEach(el=>{
+            if(el.getAttribute('data-convWith')==msgDiv.getAttribute('data-fio'))
+                check=true
+        })
+    }
+    if(!check){ //Создаю сбоку иконку если !check
+        var span=document.createElement('span'),
+            a=document.createElement('a'),
+            aside=document.getElementById('map'),
+            br=document.createElement('br')
+        span.innerText=msgDiv.getAttribute('data-fio')
+        a.setAttribute('href','#')
+        a.setAttribute('data-convWith',msgDiv.getAttribute('data-fio'))
+        a.classList.add('wodec')
+        a.insertAdjacentElement('beforeend',span)
+        aside.insertAdjacentElement('beforeend',a)
+        aside.insertAdjacentElement('beforeend',br)
+    }
+    //
+
+}
 function addMessage(message,pos)    //В чат сообщение отправляет
 {
     var chat=document.getElementById('chat')
     var newMsg=''
     if(pos=='leftpos'){
         var lmsg=JSON.parse(message)    
-        newMsg='<div class="'+pos+'" title="От: '+lmsg.fio+'"><span style="color:'+getColor(lmsg.fio)+';">'+lmsg.text+'</span></div>'
+        newMsg='<div class="'+pos+'" title="От: '+lmsg.fio+'" data-fio="'+lmsg.fio+'"><span style="color:'+getColor(lmsg.fio)+';" onclick="pm(this)">'+lmsg.text+'</span></div>'
     }else{
         var lmsg=message
         newMsg='<div class="'+pos+'"><span>'+message+'</span></div>'
@@ -41,6 +96,26 @@ connection.onmessage=(msg)=>{   //ПОЛУЧЕНИЕ СООБЩЕНИЯ С СЕ�
         alert(msage.alert)
         if(msage.alert=='Регистрация прошла успешно')
             document.getElementById('msgToSend').disabled=false
+    }else if(msage.type==='conversation'){
+        //Заново отрисовать тут
+        if(msage.extra===undefined){
+            let myName=document.getElementById('namePlace').value
+            console.log(msage.chat)
+            msage.chat.text.forEach(el=>{
+                let pos='leftpos'
+                if(myName==el.from)
+                    addMessage(el.str,'rightpos')
+                else{
+                    addMessage(JSON.stringify({
+                        fio:el.from,
+                        text:el.str
+                    }),pos)
+                }
+                
+                
+            })
+            
+        }
     }
 }
 //******************************************
@@ -53,6 +128,9 @@ function sendMessage(){ //На сервер сообщение отправле�
         fio:name,
         type:'public'        
     }
+    currentConversation.text=inp
+    currentConversation.fio=name
+    currentConversation.type='public'
     connection.send(JSON.stringify(obj))
     addMessage(inp,'rightpos')
     //inpF.value=''
@@ -60,6 +138,7 @@ function sendMessage(){ //На сервер сообщение отправле�
 function enterSentMessage(e){
     if(e.keyCode==13)   //Нажат интер
     {
+        //document.getElementById('msgToSend').innerText=''
         sendMessage()
     }    
 }

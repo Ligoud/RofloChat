@@ -16,7 +16,7 @@ function addMessageToMem(fio,type,text){
         from: fio,        
         str:text    //Текст
     })
-    console.log('endOFShit')
+   // console.log('endOFShit')
     // 
 }
 
@@ -25,7 +25,7 @@ wss.on('connection',(ws) =>{
     //console.log(ws)
     ws.on('message',(mm)=>{
         var msg=JSON.parse(mm)
-        console.log(msg)
+        //console.log(msg)
         if(msg.type=='init'){   //Инициализация пользователя            
             var res='Пользователь с таким именем уже зарегистрирован'            
             if(Names[msg.fio]===undefined){
@@ -46,6 +46,27 @@ wss.on('connection',(ws) =>{
                     Names[el].socket.send(JSON.stringify(msg))
                 }
             }
+        }else if(msg.type=='private'){
+            let conversationName=msg.from+'-'+msg.to
+            addMessageToMem(msg.from,conversationName,msg.text) //сообщение добавляю
+        }else if(msg.type=='getConv'){
+            let conv1=msg.from+'-'+msg.to,
+                conv2=msg.to+'-'+msg.from
+            if(msg.extra=='public')
+                ws.send(JSON.stringify({chat:Chats['public'],type:'conversation'}))
+            else{
+                let conv
+                if(Chats[conv1]!==undefined)
+                    conv=conv1
+                else if(Chats[conv2]!==undefined)
+                    conv=conv2
+                else conv='none'
+                if(conv!=='none')
+                    ws.send(JSON.stringify({chat:Chats[conv],type:'conversation'}))
+                else
+                    ws.send(JSON.stringify({extra:conv,type:'conversation'}))
+            }
+//            if()
         }
     })
 })
