@@ -5,8 +5,9 @@ connection.onopen=()=>{
     connection.send('somethin sent')
 }
 */
+var convWith=''
 var currentConversation={
-    type:'',
+    type:'public',
     from:'',
     to:'',
     text:'',
@@ -31,23 +32,51 @@ function toMain(){
         to:''    ,
         extra:'public'    
     }
+    currentConversation.type='public'    
+    document.querySelector('#chatHead span').innerText='Общая конференция'
     connection.send(JSON.stringify(obj)) 
 }
+function createAsideElem(withFIO,toPrivate){
+    var span=document.createElement('span'),
+        a=document.createElement('a'),
+        aside=document.getElementById('map'),
+        br=document.createElement('br')
+    span.innerText=withFIO
+    a.setAttribute('href','#')
+    a.setAttribute('data-convWith',withFIO)
+    a.classList.add('wodec')
+    a.insertAdjacentElement('beforeend',span)
+    a.addEventListener('click',toPrivate)
+    aside.insertAdjacentElement('beforeend',a)
+    aside.insertAdjacentElement('beforeend',br)
+}
 function pm(spanEl){    
-    var chat=document.getElementById('chat')
+    
     var msgDiv=spanEl.parentElement
+    function toPrivate()
+    {
+        document.getElementById('chat').innerHTML=''
+        //ТУТ convWIth пометить чтобы не искать постоянно (с кем приватка)
+        convWith=obj.to
+        currentConversation.type='private'
+        document.querySelector('#chatHead span').innerText='Чат с "'+convWith+'"'
+        //console.log(obj)
+        connection.send(JSON.stringify(obj))
+    }
     //Тут можно проверку сделать, чтобы не постоянно обновлять
-    chat.innerHTML=''
+    //chat.innerHTML=''    
     var obj={
         type:'getConv',
         from: document.getElementById('namePlace').value,
         to:msgDiv.getAttribute('data-fio')        
-    }
-    connection.send(JSON.stringify(obj))    //Запрашиваю текст с сервера
+    } 
+    toPrivate()   
+    //connection.send(JSON.stringify(obj))    //Запрашиваю текст с сервера
     //
     /*
     connection.send(JSON.stringify(obj))*/
-    var asds=document.querySelectorAll('a[data-convWIth]')
+    //Я забыл зачем это. Вроде чтобы не дублировалось слева
+    var asds=document.querySelectorAll('a[data-convWIth]')  //Боковые  считываю
     var check=false
     if(asds.length>0){
         asds.forEach(el=>{
@@ -56,20 +85,9 @@ function pm(spanEl){
         })
     }
     if(!check){ //Создаю сбоку иконку если !check
-        var span=document.createElement('span'),
-            a=document.createElement('a'),
-            aside=document.getElementById('map'),
-            br=document.createElement('br')
-        span.innerText=msgDiv.getAttribute('data-fio')
-        a.setAttribute('href','#')
-        a.setAttribute('data-convWith',msgDiv.getAttribute('data-fio'))
-        a.classList.add('wodec')
-        a.insertAdjacentElement('beforeend',span)
-        aside.insertAdjacentElement('beforeend',a)
-        aside.insertAdjacentElement('beforeend',br)
+        createAsideElem(msgDiv.getAttribute('data-fio'),toPrivate)
     }
     //
-
 }
 function addMessage(message,pos)    //В чат сообщение отправляет
 {
@@ -89,13 +107,16 @@ function addMessage(message,pos)    //В чат сообщение отправ�
 connection.onmessage=(msg)=>{   //ПОЛУЧЕНИЕ СООБЩЕНИЯ С СЕРВЕРА
     var msage=JSON.parse(msg.data) 
 
-    if(msage.type==='public'){
+    if(msage.type==='public' && currentConversation.type=='public'){  //было 'public' справа
         addMessage(msg.data,'leftpos')
     }
     else if (msage.type==='init'){
         alert(msage.alert)
-        if(msage.alert=='Регистрация прошла успешно')
+        if(msage.alert=='Регистрация прошла успешно'){
             document.getElementById('msgToSend').disabled=false
+            document.getElementById('namePlace').disabled=true
+            document.getElementById('map').classList.remove('hide')
+        }
     }else if(msage.type==='conversation'){
         //Заново отрисовать тут
         if(msage.extra===undefined){
@@ -110,36 +131,61 @@ connection.onmessage=(msg)=>{   //ПОЛУЧЕНИЕ СООБЩЕНИЯ С СЕ�
                         fio:el.from,
                         text:el.str
                     }),pos)
-                }
-                
-                
+                }                                
             })
             
+        }
+    }else if(msage.type==='private'){
+        console.log("PRIVET YA PRIVATE")
+        if(currentConversation.type==='private' && convWith==msage.from)  //from - тот, кто послал это сообщение . если текущая вкладка соотсветствует - все норм
+            addMessage(msg.data,'leftpos')
+        //else mb
+        var asides=document.querySelectorAll('a[data-convWIth]')
+        let check=false //false если нет лейбла
+        asides.forEach(el=>{
+            if(el.getAttribute('data-convWith')===msage.from) //Если слева лейбл есть уже
+                check=true
+        })
+        if(!check){
+            console.log("PRIVET YA CHECK")
+            function toPrivate()
+            {
+                document.getElementById('chat').innerHTML=''
+                var obj={
+                    type:'getConv',
+                    from: document.getElementById('namePlace').value,
+                    to:msage.from
+                }                
+                convWith=obj.to
+                currentConversation.type='private'    
+                document.querySelector('#chatHead span').innerText='Чат с "'+convWith+'"'            
+                connection.send(JSON.stringify(obj))
+            }
+            createAsideElem(msage.from,toPrivate)
         }
     }
 }
 //******************************************
 
-function sendMessage(){ //На сервер сообщение отправлем
+function sendMessage(conv){ //На сервер сообщение отправлем
     var inpF=document.getElementById('msgToSend'),name=document.getElementById('namePlace').value
     var inp=inpF.value
-    var obj={
-        text:inp,
-        fio:name,
-        type:'public'        
-    }
     currentConversation.text=inp
     currentConversation.fio=name
-    currentConversation.type='public'
-    connection.send(JSON.stringify(obj))
+    currentConversation.from=name
+    currentConversation.to=convWith
+    currentConversation.type=conv
+    connection.send(JSON.stringify(currentConversation))
     addMessage(inp,'rightpos')
     //inpF.value=''
 }
+
 function enterSentMessage(e){
     if(e.keyCode==13)   //Нажат интер
     {
         //document.getElementById('msgToSend').innerText=''
-        sendMessage()
+        console.log(currentConversation.type)
+        sendMessage(currentConversation.type)
     }    
 }
 function initUser(e){

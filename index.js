@@ -19,7 +19,17 @@ function addMessageToMem(fio,type,text){
    // console.log('endOFShit')
     // 
 }
-
+function getType(msg)
+{
+    let conv='none'
+    let conv1=msg.from+'-'+msg.to,
+        conv2=msg.to+'-'+msg.from
+    if(Chats[conv1]!==undefined)
+        conv=conv1
+    else if(Chats[conv2]!==undefined)
+        conv=conv2
+    return conv
+}
 wss.on('connection',(ws) =>{
     //socketList.add(ws)
     //console.log(ws)
@@ -48,19 +58,17 @@ wss.on('connection',(ws) =>{
             }
         }else if(msg.type=='private'){
             let conversationName=msg.from+'-'+msg.to
-            addMessageToMem(msg.from,conversationName,msg.text) //сообщение добавляю
+            let conv=getType(msg)
+            if(conv=='none')
+                conv=conversationName
+            //console.log(conv)
+            addMessageToMem(msg.from,conv,msg.text) //сообщение добавляю
+            Names[msg.to].socket.send(JSON.stringify(msg))
         }else if(msg.type=='getConv'){
-            let conv1=msg.from+'-'+msg.to,
-                conv2=msg.to+'-'+msg.from
             if(msg.extra=='public')
                 ws.send(JSON.stringify({chat:Chats['public'],type:'conversation'}))
             else{
-                let conv
-                if(Chats[conv1]!==undefined)
-                    conv=conv1
-                else if(Chats[conv2]!==undefined)
-                    conv=conv2
-                else conv='none'
+                let conv=getType(msg)
                 if(conv!=='none')
                     ws.send(JSON.stringify({chat:Chats[conv],type:'conversation'}))
                 else
